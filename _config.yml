@@ -5,6 +5,8 @@ url: https://by256.github.io/
 # Setup
 # highlighter: rogue
 strict_front_matter: true
+markdown:    kramdown
+
 
 # Build
 paginate: 6
