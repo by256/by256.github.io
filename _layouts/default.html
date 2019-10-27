@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 
-<html lang="en">
-    {% assign css = layout.css | append: ' ' | append: page.css | split: ' ' %}
+<html>
 
-    {% include head.html css=css %}
+{% include head.html %}
 
-    <body>
-        {% include top-nav.html %}
+<body>
 
-        {{ content }}
-    </body>
+  {% include navbar.html %}
+
+  {{ content }}
+
+  {% include footer.html %}
+
+  {% include scripts.html %}
+
+  {% include google-analytics.html %}
+
+</body>
+
 </html>
