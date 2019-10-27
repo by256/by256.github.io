@@ -3,9 +3,9 @@ repository: by256/by256.github.io
 url: https://by256.github.io/
 
 # Setup
-# highlighter: rogue
-strict_front_matter: true
+highlighter: rouge
 markdown:    kramdown
+strict_front_matter: true
 
 
 # Build
