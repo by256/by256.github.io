@@ -3,7 +3,7 @@ repository: by256/by256.github.io
 url: https://by256.github.io/
 
 # Setup
-highlighter: none
+highlighter: rogue
 strict_front_matter: true
 
 # Build
@@ -16,27 +16,19 @@ livereload: true
 host: 0.0.0.0
 
 author:
-    name: Shirsh Zibbu
-    email: zibbu.shirsh+github@gmail.com
-    blog: https://zhirzh.github.io
+    name: Batuhan Yildirim
+    email: by256(AT)cam.ac.uk
+    blog: https://by256.github.io
 
     social:
         github:
-            link: https://github.com/zhirzh
+            link: https://github.com/by256
             text: GitHub
 
         linkedin:
-            link: https://linkedin.com/in/shirsh-zibbu
+            link: https://www.linkedin.com/in/batuhanyildirim/
             text: LinkedIn
 
-        medium:
-            link: https://medium.com/@zhirzh
-            text: Medium
-
-        stackoverflow:
-            link: https://stackoverflow.com/users/1343488/zhirzh
-            text: StackOverflow
-
         twitter:
-            link: https://twitter.com/zhirzh
+            link: https://twitter.com/batuhanyil
             text: Twitter
