@@ -1,0 +1,33 @@
+---
+layout: default
+title: Archive
+css: archive.css
+---
+
+<main>
+    {% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+
+    {% for posts in posts_by_year %}
+        <h2>{{ posts.name }}</h2>
+
+        <ul>
+            {% for post in posts.items %}
+                <li>
+                    <span>
+                        <a href="{{ post.url }}">
+                            {{ post.title }}
+                        </a>
+
+                        &mdash;
+
+                        {{ post.date | date_to_string }}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</main>
+
+<footer>
+    {% include social.html %}
+</footer>

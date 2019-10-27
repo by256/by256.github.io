@@ -1,1 +1,29 @@
-<p>&#129312;</p>
+---
+layout: default
+css: index.css
+title: Home
+---
+
+<main>
+    {% for post in paginator.posts %}
+        <header>
+            <h1>
+                <a href="{{ post.url }}">
+                    {{ post.title }}
+                </a>
+            </h1>
+
+            <div class="date">{{ post.date | date_to_string }}</div>
+        </header>
+
+        {{ post.excerpt }}
+
+        <hr>
+    {% endfor %}
+</main>
+
+<footer>
+    {% include pagination.html %}
+
+    {% include social.html %}
+</footer>

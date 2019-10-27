@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    {% assign css = layout.css | append: ' ' | append: page.css | split: ' ' %}
+
+    {% include head.html css=css %}
+
+    <body>
+        {% include top-nav.html %}
+
+        {{ content }}
+    </body>
+</html>

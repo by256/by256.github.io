@@ -1,3 +1,42 @@
-theme: jekyll-theme-minimal
-
+title: My.Domain
+repository: by256/by256.github.io
 url: https://by256.github.io/
+
+# Setup
+highlighter: none
+strict_front_matter: true
+
+# Build
+paginate: 6
+permalink: /:slug-:short_year:month:day
+profile: true
+
+# Dev
+livereload: true
+host: 0.0.0.0
+
+author:
+    name: Shirsh Zibbu
+    email: zibbu.shirsh+github@gmail.com
+    blog: https://zhirzh.github.io
+
+    social:
+        github:
+            link: https://github.com/zhirzh
+            text: GitHub
+
+        linkedin:
+            link: https://linkedin.com/in/shirsh-zibbu
+            text: LinkedIn
+
+        medium:
+            link: https://medium.com/@zhirzh
+            text: Medium
+
+        stackoverflow:
+            link: https://stackoverflow.com/users/1343488/zhirzh
+            text: StackOverflow
+
+        twitter:
+            link: https://twitter.com/zhirzh
+            text: Twitter

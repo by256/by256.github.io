@@ -1,0 +1,13 @@
+---
+---
+
+@import 'common.scss';
+
+ul {
+    padding-left: 1em * ratio(5);
+
+    & li > span {
+        display: flex;
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,17 @@
+{% assign this_page = site.pages | where: "url", include.href | first %}
+
+{% capture class %}
+    {% if include.brand %}
+        brand
+    {% elsif  page.url == include.href %}
+        active
+    {% endif %}
+{% endcapture %}
+
+<a href={{ include.href }} class="{{ class }}">
+    {% if include.brand %}
+        {{ site.title | upcase }}
+    {% else %}
+        {{ this_page.title }}
+    {% endif %}
+</a>

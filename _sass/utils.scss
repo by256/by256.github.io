@@ -1,0 +1,15 @@
+@import 'variables.scss';
+
+@function pow($base, $exponent) {
+    $result: 1;
+
+    @for $_ from 0 to $exponent {
+        $result: $result * $base;
+    }
+
+    @return $result;
+}
+
+@function ratio($exponent) {
+    @return pow(1.2, $exponent);
+}

@@ -1,0 +1,19 @@
+<nav class="related-posts">
+    <div>
+        {% if page.previous %}
+            <a href="{{ page.previous.url }}">
+                &LongLeftArrow;
+                {{ page.previous.title }}
+            </a>
+        {% endif %}
+    </div>
+
+    <div>
+        {% if page.next %}
+            <a href="{{ page.next.url }}">
+                {{ page.next.title }}
+                &LongRightArrow;
+            </a>
+        {% endif %}
+    </div>
+</nav>
