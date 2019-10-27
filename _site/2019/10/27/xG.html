@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Creating an Expected Goals (xG) Model (with Code) - Batuhan Yildirim
+    
+  </title>
+
+  <meta name="description" content="In this article, we’re going to be creating an Expected Goals (xG) model using data made freely available by Statsbomb. As well as covering what expected goa...">
+
+  <!-- MathJax -->
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+  
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/https://by256.github.io/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/https://by256.github.io/assets/vendor/fontawesome-free/css/all.min.css">
+
+  <link rel="stylesheet" href="/https://by256.github.io/assets/main.css">
+  <link rel="canonical" href="http://localhost:4000/https://by256.github.io/2019/10/27/xG.html">
+  <link rel="alternate" type="application/rss+xml" title="Batuhan Yildirim" href="/https://by256.github.io/feed.xml">
+
+</head>
+
+
+<body>
+
+  <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/https://by256.github.io/">Batuhan Yildirim</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/https://by256.github.io/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/https://by256.github.io/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/https://by256.github.io/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/https://by256.github.io/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+  <!-- Page Header -->
+
+  <header class="masthead">
+    
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 col-md-10 mx-auto">
+          <div class="post-heading">
+            <h1>Creating an Expected Goals (xG) Model (with Code)</h1>
+            
+            <span class="meta">Posted by
+              <a href="#">by256</a>
+              on October 27, 2019 &middot; <span class="reading-time" title="Estimated read time">
+  
+   27 mins  read </span>
+
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+
+        <p>In this article, we’re going to be creating an Expected Goals (xG) model using data made freely available by <a href="https://statsbomb.com/resource-centre/">Statsbomb</a>. As well as covering what expected goals is and the simple maths involved, we’ll write some code to create an xG model and see how it performs on real matches.</p>
+
+<h3 id="what-is-expected-goals">What is Expected Goals?</h3>
+
+<p>Put simply, expected goals is a measure of how many goals a team should have scored in a match, based on how many shots they took, and how likely those shots were to result in goals. To calculate xG then, we need to work out the expected value of each shot taken at goal in a match by a team, and sum these up. But what is the expected value of a shot? In general, expected values are calculated by first enumerating all the possible outcomes of an event. Each outcome is then multiplied by the probability of it occurring, and all of these values are summed to get the expected value. In the case of a shot at goal, the outcomes are:</p>
+
+<script type="math/tex; mode=display">\textrm{No Goal}:0</script>
+
+<script type="math/tex; mode=display">\textrm{Goal}:1</script>
+
+<p>since the value of a shot at goal is 1 if scored (as this outcome increases the teams score by 1), and 0 otherwise. Thus, if we represent these two outcomes \(\textrm{Goal}\) and \(\textrm{No Goal}\) as 0 and 1 respectively, then the expected value of a single shot can be calculated as</p>
+
+<script type="math/tex; mode=display">E[X] = \sum_{x \in \{0, 1\}} xp(X = x)</script>
+
+<script type="math/tex; mode=display">E[X] = 0 \times p({X = 0}) + 1 \times p(X = 1)</script>
+
+<script type="math/tex; mode=display">E[X] = 0 \times p({\textrm{X = No Goal}}) + 1 \times p(\textrm{X = Goal})</script>
+
+<p>where \(p({X = 0})\) and \(p({X = 1})\) are the probabilities of the shot resulting in no goal and a goal respectively. Since the outcome value for the event \(\textrm{No Goal}\) is zero, we can remove that term, and the equation becomes</p>
+
+<script type="math/tex; mode=display">E[X] = p(\textrm{X = Goal})</script>
+
+<p>So it’s clear now that 
+<strong><center>the expected value of a shot on goal is the probability of that shot resulting in a goal</center></strong></p>
+
+<p>Statsbomb’s data tells us whether a shot resulted in a goal or not, so in order to calculate a team’s expected goals in a single match, all we need to do is look at a teams’ shots on goal in a match, calculate the probabilities of those shots going in, and sum them.</p>
+
+<script type="math/tex; mode=display">\textrm{xG} = \sum_{s \in \textrm{shots}} p(X_s = \textrm{Goal})</script>
+
+<p>At this point, you’re probably thinking “how on earth do you calculate the probability of each shot resulting in a goal?”. Enter logistic regression.</p>
+
+<h3 id="probabilities-of-goals">Probabilities of Goals</h3>
+
+<p>At a high level, we will learn from thousands of previous examples which shots are likely to go in, based on several features of those shots. These include the x-y coordinates of the player as they took the shot, the type of play that resulted in the shot, the position that the shooting player plays in, and many more. Using these variables as inputs, and the outcome of each shot as the target variable, we can create a simple logistic regression model that outputs the probabilities of shots resulting in goals. Logistic regression looks something like this</p>
+
+<script type="math/tex; mode=display">p(\textrm{Goal}) = \frac{1}{1 + e^{-(\beta_0 + \beta_1x_1 + \beta_2x_2 ... \beta_n x_n)}}</script>
+
+<p>where \(x_i\) are the features mentioned above, and \(\beta_i\) are the coefficients we will learn by fitting our model to the data. Fortunately, sklearn makes this process painless and easy, as we will see in the code.</p>
+
+<p>In a match, many factors can affect the probability of a shot finding the back of the net. To get our model to perform as well as possible, we want to use as much useful information as we can about each shot. Here is a list of the features we’ll use:</p>
+
+<ul>
+  <li><strong>Play Pattern</strong>: what type of play resulted in the shot (regular play, a counter attack, a free kick etc).</li>
+  <li><strong>x-Loc</strong>: x-coordinate of the player as they took the shot.</li>
+  <li><strong>y-Loc</strong>: y-coordinate of the player as they took the shot.</li>
+  <li><strong>Angle</strong>: angle between the ball and the goal posts.</li>
+  <li><strong>Shot Type</strong>: whether the shot was from open play, a free kick, a corner etc.</li>
+  <li><strong>Body Part</strong>: which body part the was shot taken with (foot, head or other).</li>
+  <li><strong>Technique</strong>: normal shot, volley, etc.</li>
+  <li><strong>Player Position</strong>: the position played by the player who took the shot.</li>
+</ul>
+
+<h3 id="one-feature-to-rule-them-all">One Feature to Rule Them All</h3>
+
+<p>Of all the features used, there is one that stands out in terms of predicting the outcome of a shot on goal. That is, the angle between the ball and the two goal posts. Intuitively, this makes sense: if the player is close to the goal as he/she shoots, or they are directly facing the centre of the goal (or both), they are more likely to score, since they are closer and have more of the goal to aim at. In this case, the angle will be large, and thus they have a higher chance of scoring. If the player is far from the goal or they are close to the corner flag, the angle will be much smaller, as will their chance of scoring. This angle should therefore give us a strong indicator of the likelihood of scoring, and using it as one of our features in the model shows exactly that.</p>
+
+<!-- ![alt text](images/angle.png "Shot Angle") -->
+<center>
+<p>
+    <img src="http://localhost:4000/images/angle.png" alt="Shot Angle" width="710" height="400" />
+</p>
+</center>
+
+<p>How do we calculate this angle? Well the Statsbomb events data gives us the x-y location of where the shot was taken from. Their data specification also tells us the coordinates of the goal posts. We can therefore calculate the distance from the ball to each goal post, as well as the distance between the two goal posts using</p>
+
+<script type="math/tex; mode=display">d = \sqrt{(x_{ball} - x_{goalpost})^2 + (y_{ball} - y_{goalpost})^2}</script>
+
+<p>With these three distances in hand, the angle between the ball and the goal posts can finally be calculated using:</p>
+
+<script type="math/tex; mode=display">\theta = \cos^{-1}(\frac{d_{1}^{2} + d_{2}^{2} - d_{3}^{2}}{2d_1d_2})</script>
+
+<p>There’s a slight problem. Statsbomb doesn’t tell us which goal the shot was taken towards. To deal with this, we can calculate the angles between the ball and both goals. Since the player taking the shot is likely going to be further away from their own goal, compared the goal they are shooting at (we’re going to assume that shots are taken only in the oppositions half), the angle is in almost all cases going to be larger for the goal they are aiming towards. We simply calculate the angle from both goals, and use the largest one. Now we can use this as one of the input features to our logistic regression model, along with the others, to calculate an expected value for each shot on goal.</p>
+
+<h3 id="how-does-the-model-perform">How Does the Model Perform</h3>
+
+<p>Before diving into the code, let’s have a look at the results. Below is a sample of matches for which xG has been calculated using our model, and compared to the true final score. In general, the model performs well, since the expected number of goals tends to come close to the observed score.</p>
+
+<pre><code class="language-JSON">{'Morocco': {'score': 1, 'xG': 0.7037000000000001},
+ 'Spain': {'score': 3, 'xG': 2.788499999999999}}
+
+
+{'Barcelona': {'score': 2, 'xG': 2.2584}, 
+ 'Levante': {'score': 1, 'xG': 0.6534}}
+
+
+{'Barcelona': {'score': 2, 'xG': 2.7747},
+ 'Racing Santander': {'score': 0, 'xG': 0.9185}}
+
+
+{'Birmingham City WFC': {'score': 0, 'xG': 0.14250000000000002},
+ 'Chelsea FCW': {'score': 0, 'xG': 2.5339}}
+
+
+{'Argentina Women's': {'score': 0, 'xG': 0.37460000000000004},
+ 'Japan Women's': {'score': 0, 'xG': 0.6176}}
+
+
+{'Barcelona': {'score': 0, 'xG': 1.1437},
+ 'Villarreal': {'score': 0, 'xG': 0.31020000000000003}}
+
+
+{'Atlético Madrid': {'score': 1, 'xG': 0.8788999999999999},
+ 'Barcelona': {'score': 6, 'xG': 2.2236000000000002}}
+
+
+{'England': {'score': 2, 'xG': 2.2647999999999997},
+ 'Tunisia': {'score': 1, 'xG': 0.9647999999999999}}
+
+
+{'Portland Thorns': {'score': 0, 'xG': 1.2822},
+ 'Seattle Reign': {'score': 1, 'xG': 2.2808}}
+
+
+{'Barcelona': {'score': 6, 'xG': 3.2030999999999996},
+ 'Málaga': {'score': 0, 'xG': 0.904}}
+
+
+{'China PR Women's': {'score': 1, 'xG': 1.3659000000000001},
+ 'South Africa Women's': {'score': 0, 'xG': 0.3744}}
+
+
+{'Chelsea FCW': {'score': 3, 'xG': 3.0930999999999997},
+ 'Manchester City WFC': {'score': 1, 'xG': 1.8133999999999997}}
+
+
+{'Sky Blue FC': {'score': 1, 'xG': 0.8275999999999999},
+ 'Utah Royals': {'score': 1, 'xG': 0.7798}}
+
+
+{'Netherlands Women's': {'score': 1, 'xG': 1.6501},
+ 'Sweden Women's': {'score': 0, 'xG': 0.8777}}
+</code></pre>
+
+<p>However, let’s also take a look at one of the shortcomings of the model and address how it might be improved. Consider this game between Barca and Sevilla:</p>
+
+<!-- ![alt text](article/images/barca.png "Barcelona Sevilla") -->
+
+<pre><code class="language-JSON">{'Barcelona': {'score': 4, 'xG': 1.4849}, 
+ 'Sevilla': {'score': 1, 'xG': 1.5615}}
+
+</code></pre>
+
+<p>Sevilla’s final goal tally was represented relatively well by it’s expected goals. Some might say they were slightly unlucky not to have scored another. Barcelona on the other hand, significantly outperformed it’s xG, scoring 2.5 more goals than expected. You could potentially explain this by saying Barcelona got lucky - they just happened to score a few more goals than expected. A more plausible explaination, and one that highlights one of the key shortcoming’s of this specific xG model, is that it is player agnostic. The model has no idea that Messi and Suarez are the ones taking the shots in Barcelona’s case. Players of this calibre are more likely to score under the same conditions than most players, and the model doesn’t know this. Instead, every shot taken is evaluated, as if the average player which resulted in the optimal model coefficients for our training data, is taking the shot. If we had the data to do so, we could potentially calculate a ‘quality metric’ for each player, and use this as an additional input feature to our model. This is likely to improve the model significantly.</p>
+
+<!-- Now let's look at a case where a team outperformed their xG due to what was most likely good fortune. -->
+
+<h3 id="cooooode">Cooooode!</h3>
+
+<p>If you want to create an xG model, go ahead and first download the data from <a href="https://statsbomb.com/resource-centre/">Statsbomb’s Resource Centre</a> if you haven’t already. Here are the libraries we will be using:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">from</span> <span class="nn">pandas.api</span> <span class="kn">import</span> <span class="n">types</span> <span class="k">as</span> <span class="n">pandas_types</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">TransformerMixin</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+</code></pre></div></div>
+
+<h4 id="data-preprocessing">Data Preprocessing</h4>
+
+<p>Before we begin, let’s take a look at the format of the match event data that we’ll be dealing with. Here’s a shot taken by Arsenal WFC’s Leonie Maier.</p>
+
+<pre><code class="language-JSON">{'id': '0c9c9821-ebdf-47dd-8dc6-0e0f0bb081d5',
+ 'index': 1374,
+ 'period': 1,
+ 'timestamp': '00:31:04.178',
+ 'minute': 31,
+ 'second': 4,
+ 'type': {'id': 16, 'name': 'Shot'},
+ 'possession': 61,
+ 'possession_team': {'id': 968, 'name': 'Arsenal WFC'},
+ 'play_pattern': {'id': 4, 'name': 'From Throw In'},
+ 'team': {'id': 968, 'name': 'Arsenal WFC'},
+ 'player': {'id': 10380, 'name': 'Leonie Maier'},
+ 'position': {'id': 2, 'name': 'Right Back'},
+ 'location': [108.7, 39.2],
+ 'duration': 0.682287,
+ 'related_events': ['4deda515-533b-4af3-aa37-e04878b36a2d'],
+ 'shot': {'statsbomb_xg': 0.5088626,
+  'end_location': [120.0, 56.7, 0.0],
+  'key_pass_id': 'f65a17bb-c6ac-4e6f-9284-b914806989c9',
+  'outcome': {'id': 98, 'name': 'Off T'},
+  'type': {'id': 87, 'name': 'Open Play'},
+  'body_part': {'id': 40, 'name': 'Right Foot'},
+  'technique': {'id': 93, 'name': 'Normal'},
+  'first_time': True,
+  ...}
+</code></pre>
+
+<p>We need to write the functions necessary for computing the input features to our model from the data. Firstly, the <code class="highlighter-rouge">compute_angle</code> function, which takes as input the x-y location of the player as they took the shot. This function calculates for each goal, the three distances mentioned previously, and computes the angles. The output is the largest of these angles.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">compute_angle</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
+    <span class="n">goal_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">36</span><span class="p">],</span> 
+                      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">44</span><span class="p">]])</span>
+    <span class="n">goal_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">120</span><span class="p">,</span> <span class="mi">36</span><span class="p">],</span> 
+                      <span class="p">[</span><span class="mi">120</span><span class="p">,</span> <span class="mi">44</span><span class="p">]])</span>
+    
+    <span class="n">goals</span> <span class="o">=</span> <span class="p">[</span><span class="n">goal_1</span><span class="p">,</span> <span class="n">goal_2</span><span class="p">]</span>
+    <span class="n">angles</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">goal</span> <span class="ow">in</span> <span class="n">goals</span><span class="p">:</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">goal</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">goal</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># distance from goal post 1
+</span>        <span class="n">d2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">goal</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">goal</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># distance from goal post 2
+</span>        <span class="n">goal_length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="nb">abs</span><span class="p">(</span><span class="n">goal</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">goal</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> 
+        <span class="n">cos_theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">d1</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">d2</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">goal_length</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d1</span> <span class="o">*</span> <span class="n">d2</span><span class="p">)</span>  <span class="c1"># cosine rule
+</span>        <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos_theta</span><span class="p">)</span> <span class="o">*</span> <span class="mi">180</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="nb">max</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+
+</code></pre></div></div>
+
+<p>Now we need a function that takes as input each match event, and computes all features that we will use as input to the model. In the <code class="highlighter-rouge">body_part</code> feature, <code class="highlighter-rouge">'Right Foot'</code> and <code class="highlighter-rouge">'Left Foot'</code> are originally two distinct outcomes. Since we have no way of knowing which is the strong foot of the player taking the shot, we merge the two into a single outcome: <code class="highlighter-rouge">'Foot'</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">compute_features</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        
+    <span class="n">play_pattern</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s">'play_pattern'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s">'location'</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">loc_x</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">loc_y</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">compute_angle</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">shot_type</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s">'shot'</span><span class="p">][</span><span class="s">'type'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span>
+    <span class="n">body_part</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s">'shot'</span><span class="p">][</span><span class="s">'body_part'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span>
+    <span class="n">body_part</span> <span class="o">=</span> <span class="s">'Foot'</span> <span class="k">if</span> <span class="n">body_part</span> <span class="ow">in</span> <span class="p">[</span><span class="s">'Right Foot'</span><span class="p">,</span> <span class="s">'Left Foot'</span><span class="p">]</span> <span class="k">else</span> <span class="n">body_part</span>
+    <span class="n">technique</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s">'shot'</span><span class="p">][</span><span class="s">'technique'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span>
+    <span class="n">player_position</span> <span class="o">=</span> <span class="n">event</span><span class="p">[</span><span class="s">'position'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">event</span><span class="p">[</span><span class="s">'shot'</span><span class="p">][</span><span class="s">'outcome'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'Goal'</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="n">feature_vector</span> <span class="o">=</span> <span class="p">[</span><span class="n">play_pattern</span><span class="p">,</span> <span class="n">loc_x</span><span class="p">,</span> <span class="n">loc_y</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">shot_type</span><span class="p">,</span> 
+                      <span class="n">body_part</span><span class="p">,</span> <span class="n">technique</span><span class="p">,</span> <span class="n">player_position</span><span class="p">,</span> <span class="n">outcome</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">feature_vector</span>
+</code></pre></div></div>
+
+<p>Now that we have the function required to compute our inputs, let’s loop through the JSON files provided by Statsbomb and calculate our features. We loop through all but the last 20 matches, saving these for model validation later. Once we have our features, we construct a pandas DataFrame.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">base_path</span> <span class="o">=</span> <span class="s">'open-data/data/events/'</span>
+
+<span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">base_path</span><span class="p">)[:</span><span class="o">-</span><span class="mi">20</span><span class="p">]:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">base_path</span> <span class="o">+</span> <span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">'position'</span> <span class="ow">in</span> <span class="n">event</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">event</span><span class="p">[</span><span class="s">'type'</span><span class="p">][</span><span class="s">'name'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'Shot'</span><span class="p">):</span>
+                <span class="n">feature_vector</span> <span class="o">=</span> <span class="n">compute_features</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+<span class="n">col_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">'play_pattern'</span><span class="p">,</span> <span class="s">'loc_x'</span><span class="p">,</span> <span class="s">'loc_y'</span><span class="p">,</span> <span class="s">'angle'</span><span class="p">,</span> <span class="s">'shot_type'</span><span class="p">,</span> <span class="s">'body_part'</span><span class="p">,</span> <span class="s">'technique'</span><span class="p">,</span> <span class="s">'player_position'</span><span class="p">,</span> <span class="s">'outcome'</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">col_names</span><span class="p">)</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div></div>
+<!-- ![alt text](article/images/df.png) -->
+
+<p>
+    <img src="images/df.png" alt="equation" width="630" height="166" />
+</p>
+
+<p>Since there is no way to input strings into a logistic regression model, let’s transform all of our categorical features (<code class="highlighter-rouge">'play_pattern', 'shot_type', 'body_part', 'technique', 'player_position'</code>), such that each value of each feature has it’s own column, with binary values. Crucially, we want to be able to remember this transformation, so that we can perform it on unseen data when we are testing or evaluating our model subsequent to training. We’ll make use of pandas’ <code class="highlighter-rouge">get_dummies()</code> function, but write a class which saves the state of the transformation on the training data.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">class</span> <span class="nc">DummyEncoder</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categories</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">X</span><span class="p">[</span><span class="n">cat</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">cat</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pandas_types</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">cat</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">categorical_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">df</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">==</span><span class="nb">object</span><span class="p">]</span>
+        <span class="n">categories</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">categorical_features</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categories</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">categorical_features</span><span class="p">,</span> <span class="n">categories</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+</code></pre></div></div>
+<p>Let’s fit the encoder to our training data and transform it.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dummy_encoder</span> <span class="o">=</span> <span class="n">DummyEncoder</span><span class="p">()</span>
+<span class="n">dummy_encoder</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">dummy_encoder</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div></div>
+<p>
+    <img src="http://localhost:4000/images/df_dummy.png" alt="equation" width="941" height="166" />
+</p>
+
+<p>Finally we need to scale each variable, such that all the features are within the same range and split our training data into train and validation subsets.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+<span class="n">x_train</span><span class="p">,</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_val</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s">'outcome'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">df</span><span class="p">[</span><span class="s">'outcome'</span><span class="p">],</span> 
+                                                  <span class="n">train_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">stratify</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s">'outcome'</span><span class="p">])</span>
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
+<span class="n">x_val</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">x_val</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="defining-and-training-our-xg-model">Defining and Training Our xG Model</h4>
+
+<p>Fitting our model to the data is as simple as</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">xG_model</span> <span class="o">=</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">solver</span><span class="o">=</span><span class="s">'liblinear'</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">xG_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="evaluation">Evaluation</h4>
+
+<p>Now that the model is trained, let’s predict the probabilities of the shots in our validation set, and evaluate the performance of the model.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">y_pred</span> <span class="o">=</span> <span class="n">xG_model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x_val</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="n">auc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_val</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+<span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_val</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'ROC Curve'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="s">'k'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'AUC: {0:.2f}'</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">auc</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="s">'upper left'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">handlelength</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span><span class="s">'r--'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'True Positive Rate'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'False Positive Rate'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>
+    <img src="http://localhost:4000/images/roc.png" alt="equation" width="560" height="400" />
+</p>
+
+<p>An AUC score of 0.8 - respectable for any classification task.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>There you have it - we defined what expected goals is, and created a simple model using freely available data. Here are some key takeways:</p>
+
+<!-- While we focused on the xG of a team, the expected value of a shot can also used to evaluate the quality of individual shots, serving as an evaluation metric for the quality of strikers. -->
+
+<ul>
+  <li>Expected Goals can be used to evaluate the performance of a team during match. When xG comes close to the score of a team, this indicates that they performed as we would have expected them to perform. When a team outperforms their xG, this means they scored more goals than expected, either due to an exceptional performance, or simply good luck. On the other hand, if a team scores fewer goals than their xG, this indicates that they perfomed poorly, failing to put away chances that they otherwise should have.</li>
+  <li>Expected Goals can also be used to assess the quality of individual shots, serving as an evaluation metric for the performance of strikers.</li>
+</ul>
+
+<p>Thanks for reading. If want to play around with the code yourself, <a href="https://github.com/by256/xG">here</a> is a link to the repository.</p>
+
+<p>Follow me on twitter <a href="https://twitter.com/batuhanyil">@batuhanyil</a>.</p>
+
+
+        <hr>
+
+        <div class="clearfix">
+
+          
+          
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="mailto:by256@cam.ac.uk">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="far fa-envelope fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://twitter.com/batuhanyil">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://www.linkedin.com/in/batuhanyildirim">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/by256">
+              <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Batuhan Yildirim 2019</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="/https://by256.github.io/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/https://by256.github.io/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/https://by256.github.io/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/https://by256.github.io/assets/scripts.js"></script>
+
+
+
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-XXXXXXXXX-X');
+</script>
+
+
+
+</body>
+
+</html>
