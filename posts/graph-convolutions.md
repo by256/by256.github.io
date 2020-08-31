@@ -1,4 +1,4 @@
-# Sepctral Graph Convolutions -  Fourier Transforms (on Graphs) for the Birdwatcher
+# Spectral Graph Convolutions -  Fourier Transforms (on Graphs) for the Birdwatcher
 
 In the spirit of Francis Crick, who in trying to explain X-ray crystallography to a colleague, simplified the mathematical concepts such that he considered writing up his explanations under the title 'Fourier Transforms for the Birdwatcher' - this post will attempt to do the same with spectral graph convolutions.
 
