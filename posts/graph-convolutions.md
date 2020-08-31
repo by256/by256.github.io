@@ -62,8 +62,8 @@ A quick warning though. While this would actually be fairly straightforward to i
 
 Here are a few resources that were useful in understanding spectral graph convolutions and in writing this:
 
-[1] J. Bruna, W. Zaremba, A. Szlam, Y. LeCun. Spectral Networks and Deep Locally Connected Networks on Graphs. *arXiv:1312.6203* (2013)
-[2] M. Henaff, J. Bruna, Y. LeCun. Deep Convolutional Networks on Graph-Structured Data. *arXiv:1506.05163*, (2015)
-[3] M. Defferrard, X. Bresson, P. Vandergheynst. Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering. *Advances in Neural Information Processing Systems* (2016)
-[4] F. Chung. Spectral Graph Theory. *American Mathematical Society* (1997)
-[5] X. Bresson. Lecture: Graph Convolutional Networks. *https://www.youtube.com/watch?v=Iiv9R6BjxHM* (2020)
+[1] J. Bruna, W. Zaremba, A. Szlam, Y. LeCun. Spectral Networks and Deep Locally Connected Networks on Graphs. *arXiv:1312.6203* (2013)\
+[2] M. Henaff, J. Bruna, Y. LeCun. Deep Convolutional Networks on Graph-Structured Data. *arXiv:1506.05163*, (2015)\
+[3] M. Defferrard, X. Bresson, P. Vandergheynst. Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering. *Advances in Neural Information Processing Systems* (2016)\
+[4] F. Chung. Spectral Graph Theory. *American Mathematical Society* (1997)\
+[5] X. Bresson. Lecture: Graph Convolutional Networks. *https://www.youtube.com/watch?v=Iiv9R6BjxHM* (2020)\
