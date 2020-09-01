@@ -17,9 +17,7 @@
 <p><span class="math display">\[\Delta = I - D^{-\frac{1}{2}}AD^{-\frac{1}{2}}\]</span></p>
 <p>where A is an adjacency matrix, such that <span class="math inline">\(A_{ij} = 1\)</span> if node <span class="math inline">\(i\)</span> is connected to node <span class="math inline">\(j\)</span>, and 0 otherwise; and D is the degree matrix - a diagonal matrix where <span class="math inline">\(D_{ii}\)</span> is the number of nodes connected to node <span class="math inline">\(i\)</span> and <span class="math inline">\(D_{ij} = 0 \:\: \forall \:\: (i, j), i \neq j\)</span>. Intuitively, the Laplacian is a measure of local smoothness in the graph. Multiplying a node signal <span class="math inline">\(h_i\)</span> by <span class="math inline">\(\Delta\)</span> represents how much a node differs from its neighbours.</p>
 <p><span class="math display">\[\Delta h_i = h_i - \frac{1}{d_i}\sum_{j \in \mathcal{N}_i}A_{ij}h_j\]</span></p>
-<p>If the signal is “smooth”, or the neighbourhood of node <span class="math inline">\(h_i\)</span> does not vary much from itself, this difference will be close to zero. However, if there is high variance in <span class="math inline">\(\mathcal{N}_i\)</span>, the difference will be large. Thus, the Laplacian is simply a measure of the smoothness of a function on a graph. What’s the point of the Laplacian?</p>
-<p><strong>The eigenvectors of the Laplacian matrix of a graph are the Fourier basis vectors that we will use to take the Fourier transform of signals defined on that graph.</strong></p>
-<p>By taking the eigendecomposition of <span class="math inline">\(\Delta\)</span>, we obtain the eigenvectors <span class="math inline">\(\Phi\)</span> and hence Fourier basis vectors.</p>
+<p>If the signal is “smooth”, or the neighbourhood of node <span class="math inline">\(h_i\)</span> does not vary much from itself, this difference will be close to zero. However, if there is high variance in <span class="math inline">\(\mathcal{N}_i\)</span>, the difference will be large. Thus, the Laplacian is simply a measure of the smoothness of a function on a graph. What’s the point of the Laplacian? <strong>The eigenvectors of the Laplacian matrix of a graph are the Fourier basis vectors that we will use to take the Fourier transform of signals defined on that graph.</strong> By taking the eigendecomposition of <span class="math inline">\(\Delta\)</span>, we obtain the eigenvectors <span class="math inline">\(\Phi\)</span> and hence Fourier basis vectors.</p>
 <p><span class="math display">\[\Delta = \Phi^T \Lambda \Phi\]</span></p>
 <h4 id="spectral-graph-convolutions">Spectral Graph Convolutions</h4>
 <p>Now we can take our graph signal <span class="math inline">\(h\)</span> into Fourier space as we would with a real-valued function:</p>
@@ -34,8 +32,9 @@
 <p>That’s it. The key here is that we’re able to obtain the Fourier basis vectors from the eigendecomposition of the graph Laplacian. By taking advantage of the convolution theorem, we can perform convolution on signals on graphs by taking a short detour into the frequency domain to multiply, and returning via the inverse Fourier transform to obtain the result we’re after.</p>
 <p>A quick warning though. While this would actually be fairly straightforward to implement, in practice, this method is quite inefficient. Plenty of tricks have been discovered recently to increase the efficiency of spectral graph convs and it should be possible to uncover them with a quick search of the literature.</p>
 <p>Here are a few resources that were useful in understanding spectral graph convolutions and in writing this:</p>
-<p>[1] J. Bruna, W. Zaremba, A. Szlam, Y. LeCun. Spectral Networks and Deep Locally Connected Networks on Graphs. <em>arXiv:1312.6203</em> (2013)</p>
-<p>[2] M. Henaff, J. Bruna, Y. LeCun. Deep Convolutional Networks on Graph-Structured Data. <em>arXiv:1506.05163</em>, (2015)</p>
-<p>[3] M. Defferrard, X. Bresson, P. Vandergheynst. Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering. <em>Advances in Neural Information Processing Systems</em> (2016)</p>
-<p>[4] F. Chung. Spectral Graph Theory. <em>American Mathematical Society</em> (1997)</p>
-<p>[5] X. Bresson. Lecture: Graph Convolutional Networks. <em>https://www.youtube.com/watch?v=Iiv9R6BjxHM</em> (2020)</p>
+<p>[1] J. Bruna, W. Zaremba, A. Szlam, Y. LeCun. Spectral Networks and Deep Locally Connected Networks on Graphs. <em>arXiv:1312.6203</em> (2013)<br />
+[2] M. Henaff, J. Bruna, Y. LeCun. Deep Convolutional Networks on Graph-Structured Data. <em>arXiv:1506.05163</em>, (2015)<br />
+[3] M. Defferrard, X. Bresson, P. Vandergheynst. Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering. <em>Advances in Neural Information Processing Systems</em> (2016)<br />
+[4] F. Chung. Spectral Graph Theory. <em>American Mathematical Society</em> (1997)<br />
+[5] X. Bresson. Lecture: Graph Convolutional Networks. <em>https://www.youtube.com/watch?v=Iiv9R6BjxHM</em> (2020)<br />
+</p>

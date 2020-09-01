@@ -28,11 +28,7 @@ where A is an adjacency matrix, such that $A_{ij} = 1$ if node $i$ is connected 
 
 $$\Delta h_i = h_i - \frac{1}{d_i}\sum_{j \in \mathcal{N}_i}A_{ij}h_j$$
 
-If the signal is "smooth", or the neighbourhood of node $h_i$ does not vary much from itself, this difference will be close to zero. However, if there is high variance in $\mathcal{N}_i$, the difference will be large. Thus, the Laplacian is simply a measure of the smoothness of a function on a graph. What's the point of the Laplacian?
-
-**The eigenvectors of the Laplacian matrix of a graph are the Fourier basis vectors that we will use to take the Fourier transform of signals defined on that graph.**
-
-By taking the eigendecomposition of $\Delta$, we obtain the eigenvectors $\Phi$ and hence Fourier basis vectors.
+If the signal is "smooth", or the neighbourhood of node $h_i$ does not vary much from itself, this difference will be close to zero. However, if there is high variance in $\mathcal{N}_i$, the difference will be large. Thus, the Laplacian is simply a measure of the smoothness of a function on a graph. What's the point of the Laplacian? **The eigenvectors of the Laplacian matrix of a graph are the Fourier basis vectors that we will use to take the Fourier transform of signals defined on that graph.** By taking the eigendecomposition of $\Delta$, we obtain the eigenvectors $\Phi$ and hence Fourier basis vectors.
 
 $$\Delta = \Phi^T \Lambda \Phi$$
 
