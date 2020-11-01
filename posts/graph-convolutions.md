@@ -10,7 +10,7 @@ $$w * h = \sum_{j \in \mathcal{N}_{i}} \langle w_{j}, h_{i-j}\rangle $$
 
 where $\mathcal{N}_{i}$ is the neighbourhood of pixel $i$. This is possible because pixels exist in a grid with indices which define exactly where they exist on that grid. The vertices of a graph however are permutationally invariant and are not indexed in a way that encodes their structure. As a result, we can't perform convolution directly like this. This forces us into the Fourier domain. The convolution theorem states that the Fourier transform of the convolution of two functions is the pointwise product of their Fourier transforms.
 
-$$w * h = \mathcal{F}^{-1}(\mathcal{F(w)*\mathcal{F}(h)})$$
+$$w * h = \mathcal{F}^{-1}(\mathcal{F(w) \odot \mathcal{F}(h)})$$
 
 Thus we can obtain the convolution by first multiplying our functions in the Fourier domain, and subsequently returning via the inverse Fourier transform. Ok, but if $h$ is a node feature vector on a graph, how do you take the Fourier Transform of nodes on a graph?
 
